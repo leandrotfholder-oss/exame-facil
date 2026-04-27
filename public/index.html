@@ -501,14 +501,30 @@
   const CLIENTE_ID = new URLSearchParams(location.search).get('c') || 'demo';
   const API_URL = '/.netlify/functions/processar-exame';
 
-  const CLIENTES = {
-    'demo': 'Laboratório Demo',
-    'l001': 'Lab. São Lucas',
-    'l002': 'Clínica Vida',
-    'l003': 'Hospital Central',
-  };
+  function carregarCliente() {
+    try {
+      const labs = JSON.parse(localStorage.getItem('ef_labs') || '[]');
+      const lab = labs.find(l => l.id === CLIENTE_ID);
+      if (lab) {
+        if (lab.logo) {
+          const logoImg = document.createElement('img');
+          logoImg.src = lab.logo;
+          logoImg.alt = lab.nome;
+          logoImg.style.cssText = 'height:32px;max-width:120px;object-fit:contain;border-radius:6px';
+          document.getElementById('cliente-nome').replaceWith(logoImg);
+        } else {
+          document.getElementById('cliente-nome').textContent = lab.nome;
+        }
+      } else {
+        const CLIENTES = { 'demo':'Laboratório Demo','l001':'Lab. São Lucas','l002':'Clínica Vida','l003':'Hospital Central' };
+        document.getElementById('cliente-nome').textContent = CLIENTES[CLIENTE_ID] || `Lab #${CLIENTE_ID}`;
+      }
+    } catch {
+      document.getElementById('cliente-nome').textContent = 'Laboratório';
+    }
+  }
 
-  document.getElementById('cliente-nome').textContent = CLIENTES[CLIENTE_ID] || `Lab #${CLIENTE_ID}`;
+  carregarCliente();
 
   let stream = null;
 
