@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <meta name="theme-color" content="#080c14" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Exame Fácil</title>
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #080c14;
+      --surface: #0f1520;
+      --surface2: #161e2e;
+      --border: rgba(99,140,255,0.1);
+      --border2: rgba(99,140,255,0.18);
+      --text: #e8edf8;
+      --text2: #7a8aaa;
+      --accent: #4f8eff;
+      --accent2: #3a70e0;
+      --success: #34d399;
+      --warn: #fbbf24;
+      --danger: #f87171;
+      --critical: #ff4444;
+      --radius: 16px;
+      --radius-sm: 10px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 18px 20px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 0.5px solid var(--border);
+    }
+
+    .logo {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 19px;
+      letter-spacing: -0.3px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .logo-icon {
+      width: 28px; height: 28px;
+      background: rgba(79,142,255,0.15);
+      border: 0.5px solid rgba(79,142,255,0.3);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .logo-icon svg { width: 14px; height: 14px; }
+
+    .cliente-badge {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text2);
+      background: var(--surface2);
+      border: 0.5px solid var(--border2);
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 20px 20px;
+      gap: 18px;
+      max-width: 520px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    /* INICIAL */
+    #estado-inicial { display: flex; flex-direction: column; gap: 22px; }
+
+    .hero { text-align: center; padding: 8px 0; }
+    .hero h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 24px;
+      letter-spacing: -0.4px;
+      line-height: 1.25;
+      margin-bottom: 8px;
+    }
+    .hero h1 span { color: var(--accent); }
+    .hero p { font-size: 13px; color: var(--text2); font-weight: 300; max-width: 260px; margin: 0 auto; }
+
+    /* CHIPS DE TIPO */
+    .chips {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .chip {
+      font-size: 12px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      border: 0.5px solid var(--border2);
+      color: var(--text2);
+      background: var(--surface);
+    }
+
+    /* VIEWFINDER */
+    .viewfinder {
+      width: 100%;
+      aspect-ratio: 4/3;
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 0.5px solid var(--border2);
+      overflow: hidden;
+      position: relative;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    video { width: 100%; height: 100%; object-fit: cover; display: none; }
+    video.active { display: block; }
+    canvas#preview { width: 100%; height: 100%; object-fit: cover; display: none; border-radius: var(--radius); }
+    canvas#preview.active { display: block; }
+
+    .vf-idle { display: flex; flex-direction: column; align-items: center; gap: 10px; color: var(--text2); }
+    .vf-idle svg { opacity: 0.3; }
+    .vf-idle p { font-size: 12px; font-weight: 300; }
+
+    .corner { position: absolute; width: 22px; height: 22px; border-color: var(--accent); border-style: solid; opacity: 0; transition: opacity 0.3s; }
+    .corner.tl { top: 14px; left: 14px; border-width: 2px 0 0 2px; border-radius: 4px 0 0 0; }
+    .corner.tr { top: 14px; right: 14px; border-width: 2px 2px 0 0; border-radius: 0 4px 0 0; }
+    .corner.bl { bottom: 14px; left: 14px; border-width: 0 0 2px 2px; border-radius: 0 0 0 4px; }
+    .corner.br { bottom: 14px; right: 14px; border-width: 0 2px 2px 0; border-radius: 0 0 4px 0; }
+    .corner.vis { opacity: 1; }
+
+    .scan-line {
+      position: absolute; left: 14px; right: 14px; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      display: none; animation: scan 2.2s ease-in-out infinite;
+    }
+    .scan-line.active { display: block; }
+    @keyframes scan { 0%{top:15%;opacity:0} 10%{opacity:1} 90%{opacity:1} 100%{top:82%;opacity:0} }
+
+    /* BOTÕES */
+    .btn-primary {
+      width: 100%; padding: 15px;
+      background: var(--accent); color: #fff;
+      border: none; border-radius: var(--radius-sm);
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700; font-size: 14px; letter-spacing: 0.02em;
+      cursor: pointer; transition: all 0.15s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-primary:active { transform: scale(0.98); background: var(--accent2); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    .btn-secondary {
+      width: 100%; padding: 13px;
+      background: transparent; color: var(--text2);
+      border: 0.5px solid var(--border2);
+      border-radius: var(--radius-sm);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 400; font-size: 13px;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .btn-secondary:active { background: var(--surface2); }
+
+    /* LOADING */
+    #estado-loading {
+      display: none; flex-direction: column;
+      align-items: center; gap: 20px; padding: 48px 0; text-align: center;
+    }
+    .loader {
+      width: 44px; height: 44px;
+      border: 2px solid var(--border2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-title { font-family: 'Space Grotesk', sans-serif; font-weight: 500; font-size: 16px; color: var(--text2); }
+    .loading-sub { font-size: 12px; color: var(--text2); opacity: 0.5; font-weight: 300; }
+
+    /* RESULTADO */
+    #estado-resultado { display: none; flex-direction: column; gap: 14px; }
+
+    .res-header {
+      display: flex; align-items: flex-start;
+      justify-content: space-between; gap: 12px;
+      padding-bottom: 14px;
+      border-bottom: 0.5px solid var(--border);
+    }
+
+    .res-header-left { display: flex; align-items: center; gap: 10px; }
+
+    .check-circle {
+      width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(52,211,153,0.12);
+    }
+
+    .res-tipo { font-size: 11px; color: var(--accent); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 2px; }
+    .res-title { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 17px; line-height: 1.2; }
+
+    /* RESUMO */
+    .resumo-box {
+      background: var(--surface);
+      border: 0.5px solid var(--border2);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      font-size: 13px;
+      font-weight: 300;
+      color: var(--text);
+      line-height: 1.6;
+      border-left: 2px solid var(--accent);
+      border-radius: 0 var(--radius) var(--radius) 0;
+    }
+
+    /* ALERTAS */
+    .alerta {
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      display: flex; gap: 10px; align-items: flex-start;
+    }
+    .alerta.atencao { background: rgba(251,191,36,0.08); border: 0.5px solid rgba(251,191,36,0.2); }
+    .alerta.consulte_medico { background: rgba(248,113,113,0.08); border: 0.5px solid rgba(248,113,113,0.2); }
+    .alerta.urgente { background: rgba(255,68,68,0.1); border: 0.5px solid rgba(255,68,68,0.3); }
+
+    .alerta-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+    .atencao .alerta-dot { background: var(--warn); }
+    .consulte_medico .alerta-dot { background: var(--danger); }
+    .urgente .alerta-dot { background: var(--critical); }
+
+    .alerta-item { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
+    .atencao .alerta-item { color: var(--warn); }
+    .consulte_medico .alerta-item { color: var(--danger); }
+    .urgente .alerta-item { color: var(--critical); }
+    .alerta-msg { font-size: 12px; font-weight: 300; color: var(--text); line-height: 1.5; }
+
+    /* ITENS */
+    .section-label {
+      font-size: 11px; font-weight: 600; color: var(--text2);
+      letter-spacing: 0.07em; text-transform: uppercase;
+      margin: 4px 0 8px;
+    }
+
+    .item-card {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+
+    .item-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+    .item-nome { font-size: 13px; font-weight: 500; color: var(--text); }
+    .item-nome-simples { font-size: 11px; color: var(--text2); font-weight: 300; margin-top: 1px; }
+
+    .item-valor-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+    .item-valor { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 16px; }
+    .item-valor.normal { color: var(--success); }
+    .item-valor.alto { color: var(--danger); }
+    .item-valor.baixo { color: var(--warn); }
+    .item-valor.critico { color: var(--critical); }
+
+    .item-status {
+      font-size: 10px; font-weight: 600; padding: 2px 7px;
+      border-radius: 20px; letter-spacing: 0.04em;
+    }
+    .item-status.normal { background: rgba(52,211,153,0.1); color: var(--success); }
+    .item-status.alto { background: rgba(248,113,113,0.1); color: var(--danger); }
+    .item-status.baixo { background: rgba(251,191,36,0.1); color: var(--warn); }
+    .item-status.critico { background: rgba(255,68,68,0.12); color: var(--critical); }
+
+    .item-ref { font-size: 11px; color: var(--text2); font-weight: 300; }
+    .item-explicacao { font-size: 12px; color: var(--text2); font-weight: 300; line-height: 1.5; padding-top: 4px; border-top: 0.5px solid var(--border); }
+
+    /* RECOMENDAÇÃO */
+    .recomendacao {
+      background: rgba(79,142,255,0.06);
+      border: 0.5px solid rgba(79,142,255,0.2);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      font-size: 13px; font-weight: 300; color: var(--text);
+      line-height: 1.6;
+    }
+
+    /* ERRO */
+    #estado-erro {
+      display: none; flex-direction: column;
+      align-items: center; gap: 14px;
+      padding: 40px 0; text-align: center;
+    }
+    .erro-icon { width: 48px; height: 48px; background: rgba(248,113,113,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+    .erro-title { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 17px; }
+    .erro-sub { font-size: 13px; color: var(--text2); font-weight: 300; }
+
+    footer {
+      padding: 14px 20px; text-align: center;
+      font-size: 11px; color: var(--text2); opacity: 0.4;
+      border-top: 0.5px solid var(--border);
+    }
+
+    .hidden { display: none !important; }
+    .flex-col { display: flex; flex-direction: column; gap: 8px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" stroke="#4f8eff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    Exame Fácil
+  </div>
+  <span class="cliente-badge" id="cliente-nome">Carregando...</span>
+</header>
+
+<main>
+
+  <div id="estado-inicial">
+    <div class="hero">
+      <h1>Entenda seu<br/><span>resultado de exame</span></h1>
+      <p>Fotografe o laudo e receba uma explicação simples e clara</p>
+    </div>
+
+    <div class="chips">
+      <span class="chip">Sangue e urina</span>
+      <span class="chip">Imagem</span>
+      <span class="chip">Laudos</span>
+      <span class="chip">Todos os tipos</span>
+    </div>
+
+    <div class="viewfinder" id="viewfinder">
+      <div class="vf-idle" id="idle-placeholder">
+        <svg width="36" height="36" fill="none" viewBox="0 0 24 24">
+          <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <p>Câmera será ativada aqui</p>
+      </div>
+      <video id="video" autoplay playsinline></video>
+      <canvas id="preview"></canvas>
+      <div class="corner tl" id="c-tl"></div>
+      <div class="corner tr" id="c-tr"></div>
+      <div class="corner bl" id="c-bl"></div>
+      <div class="corner br" id="c-br"></div>
+      <div class="scan-line" id="scan-line"></div>
+    </div>
+
+    <div class="flex-col">
+      <button class="btn-primary" id="btn-camera" onclick="ativarCamera()">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
+          <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="1.5"/>
+        </svg>
+        Ativar câmera
+      </button>
+      <button class="btn-secondary hidden" id="btn-capturar" onclick="capturarFoto()">Fotografar exame</button>
+      <button class="btn-secondary hidden" id="btn-upload" onclick="document.getElementById('input-file').click()">Carregar da galeria</button>
+      <input type="file" id="input-file" accept="image/*" class="hidden" onchange="carregarArquivo(event)" />
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <div id="estado-loading">
+    <div class="loader"></div>
+    <div>
+      <div class="loading-title">Analisando exame...</div>
+      <div class="loading-sub">Identificando valores e referências</div>
+    </div>
+  </div>
+
+  <!-- RESULTADO -->
+  <div id="estado-resultado"></div>
+
+  <!-- ERRO -->
+  <div id="estado-erro">
+    <div class="erro-icon">
+      <svg width="22" height="22" fill="none" viewBox="0 0 24 24">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" fill="#f87171"/>
+      </svg>
+    </div>
+    <div class="erro-title">Não foi possível ler</div>
+    <div class="erro-sub" id="erro-msg">Tente com melhor iluminação e enquadramento</div>
+    <button class="btn-primary" style="margin-top:8px;max-width:200px" onclick="reiniciar()">Tentar novamente</button>
+  </div>
+
+</main>
+
+<footer>Explicação informativa · Não substitui diagnóstico médico</footer>
+
+<canvas id="canvas-oculto" class="hidden"></canvas>
+
+<script>
+  const CLIENTE_ID = new URLSearchParams(location.search).get('c') || 'demo';
+  const API_URL = '/.netlify/functions/processar-exame';
+
+  const CLIENTES = {
+    'demo': 'Laboratório Demo',
+    'l001': 'Lab. São Lucas',
+    'l002': 'Clínica Vida',
+    'l003': 'Hospital Central',
+  };
+
+  document.getElementById('cliente-nome').textContent =
+    CLIENTES[CLIENTE_ID] || `Lab #${CLIENTE_ID}`;
+
+  let stream = null;
+
+  async function ativarCamera() {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
+      });
+      const video = document.getElementById('video');
+      video.srcObject = stream;
+      video.classList.add('active');
+      document.getElementById('idle-placeholder').classList.add('hidden');
+      document.getElementById('btn-camera').classList.add('hidden');
+      document.getElementById('btn-capturar').classList.remove('hidden');
+      document.getElementById('btn-upload').classList.remove('hidden');
+      ['c-tl','c-tr','c-bl','c-br'].forEach(id => document.getElementById(id).classList.add('vis'));
+      document.getElementById('scan-line').classList.add('active');
+    } catch {
+      document.getElementById('btn-upload').classList.remove('hidden');
+      document.getElementById('btn-camera').textContent = 'Câmera indisponível — use galeria';
+      document.getElementById('btn-camera').disabled = true;
+    }
+  }
+
+  function capturarFoto() {
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas-oculto');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    const preview = document.getElementById('preview');
+    preview.width = canvas.width;
+    preview.height = canvas.height;
+    preview.getContext('2d').drawImage(canvas, 0, 0);
+    video.classList.remove('active');
+    preview.classList.add('active');
+    stream?.getTracks().forEach(t => t.stop());
+    processarImagem(canvas.toDataURL('image/jpeg', 0.92));
+  }
+
+  function carregarArquivo(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => processarImagem(e.target.result);
+    reader.readAsDataURL(file);
+  }
+
+  async function processarImagem(imageData) {
+    mostrarEstado('loading');
+    try {
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: imageData, cliente_id: CLIENTE_ID })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.sucesso) throw new Error(data.error || 'Erro desconhecido');
+      mostrarResultado(data.resultado);
+    } catch (err) {
+      document.getElementById('erro-msg').textContent = err.message || 'Tente novamente com melhor iluminação';
+      mostrarEstado('erro');
+    }
+  }
+
+  function statusLabel(s) {
+    return { normal: 'Normal', alto: 'Alto', baixo: 'Baixo', critico: 'Crítico' }[s] || s;
+  }
+
+  function urgenciaLabel(u) {
+    return { atencao: 'Atenção', consulte_medico: 'Consulte o médico', urgente: 'Urgente' }[u] || u;
+  }
+
+  function mostrarResultado(r) {
+    const container = document.getElementById('estado-resultado');
+    const alertas = r.alertas || [];
+    const itens = r.itens || [];
+    const alterados = itens.filter(i => i.status !== 'normal').length;
+
+    const alertasHtml = alertas.length > 0 ? `
+      <div class="section-label">Atenção</div>
+      ${alertas.map(a => `
+        <div class="alerta ${a.urgencia}">
+          <div class="alerta-dot"></div>
+          <div>
+            <div class="alerta-item">${urgenciaLabel(a.urgencia)} · ${a.item}</div>
+            <div class="alerta-msg">${a.mensagem}</div>
+          </div>
+        </div>
+      `).join('')}
+    ` : '';
+
+    const itensHtml = itens.length > 0 ? `
+      <div class="section-label">Valores do exame</div>
+      ${itens.map(item => `
+        <div class="item-card">
+          <div class="item-top">
+            <div>
+              <div class="item-nome">${item.nome_tecnico}</div>
+              ${item.nome_simples ? `<div class="item-nome-simples">${item.nome_simples}</div>` : ''}
+            </div>
+            <div class="item-valor-wrap">
+              <div class="item-valor ${item.status}">${item.valor || '—'} <span style="font-size:11px;font-weight:400">${item.unidade || ''}</span></div>
+              <span class="item-status ${item.status}">${statusLabel(item.status)}</span>
+            </div>
+          </div>
+          ${item.referencia ? `<div class="item-ref">Referência: ${item.referencia}</div>` : ''}
+          ${item.explicacao ? `<div class="item-explicacao">${item.explicacao}</div>` : ''}
+        </div>
+      `).join('')}
+    ` : '';
+
+    const conclusaoHtml = r.conclusao_laudo ? `
+      <div class="section-label">Conclusão do laudo</div>
+      <div class="resumo-box">${r.conclusao_laudo}</div>
+    ` : '';
+
+    container.innerHTML = `
+      <div class="res-header">
+        <div class="res-header-left">
+          <div class="check-circle">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
+              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="#34d399" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div>
+            <div class="res-tipo">${r.tipo_exame || 'Exame'}</div>
+            <div class="res-title">${alterados > 0 ? `${alterados} item${alterados > 1 ? 's' : ''} fora do padrão` : 'Todos os valores normais'}</div>
+          </div>
+        </div>
+      </div>
+
+      ${r.resumo_geral ? `<div class="resumo-box">${r.resumo_geral}</div>` : ''}
+
+      ${alertasHtml}
+      ${itensHtml}
+      ${conclusaoHtml}
+
+      ${r.recomendacao ? `
+        <div class="section-label">Próximos passos</div>
+        <div class="recomendacao">${r.recomendacao}</div>
+      ` : ''}
+
+      <button class="btn-secondary" onclick="reiniciar()">Analisar outro exame</button>
+
+      <p style="font-size:11px;color:var(--text2);opacity:0.4;text-align:center;font-weight:300">
+        Esta explicação é informativa. Consulte sempre seu médico para interpretação completa.
+      </p>
+    `;
+
+    mostrarEstado('resultado');
+  }
+
+  function mostrarEstado(estado) {
+    ['inicial','loading','resultado','erro'].forEach(e => {
+      document.getElementById(`estado-${e}`).style.display = e === estado ? 'flex' : 'none';
+    });
+  }
+
+  function reiniciar() {
+    stream?.getTracks().forEach(t => t.stop());
+    stream = null;
+    document.getElementById('video').classList.remove('active');
+    document.getElementById('preview').classList.remove('active');
+    document.getElementById('idle-placeholder').classList.remove('hidden');
+    document.getElementById('btn-camera').classList.remove('hidden');
+    document.getElementById('btn-camera').disabled = false;
+    document.getElementById('btn-camera').innerHTML = `
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
+        <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="1.5"/>
+      </svg>
+      Ativar câmera`;
+    document.getElementById('btn-capturar').classList.add('hidden');
+    document.getElementById('btn-upload').classList.add('hidden');
+    ['c-tl','c-tr','c-bl','c-br'].forEach(id => document.getElementById(id).classList.remove('vis'));
+    document.getElementById('scan-line').classList.remove('active');
+    mostrarEstado('inicial');
+  }
+</script>
+</body>
+</html>
